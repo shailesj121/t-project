@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="style.css" />
+  <title>T-project</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128/examples/js/controls/OrbitControls.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128/examples/js/loaders/GLTFLoader.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/ScrollTrigger.min.js"></script>
+  <style>
+    canvas{
+      position: fixed;
+      width: 100%;
+      height: 100%;
+      z-index: -1;
+    }
+  </style>
+</head>
+
+<body style="height: 200vh">
+  <canvas id="master-canvas" width="100"></canvas>
+
+  <div style="display: none" id="fragmentShader">
+    varying vec3 vColor;
+    varying float vDistance;
+    
+    void main() {
+      float strength = distance(gl_PointCoord, vec2(0.5));
+        strength *= 2.0;
+        strength = smoothstep(0.7,0.8,1.0 - strength);
+      gl_FragColor.rgba = vec4(vColor,1.);
+      gl_FragColor.a *= strength;
+      gl_FragColor.a *= vDistance;
+    }
+  </div>
+
+  <div style="display: none" id="vertexShader">
+    attribute vec3 color;
+    attribute float offset;
+    attribute vec3 position2;
+    varying vec3 vColor;
+    uniform float uTime;
+    uniform float uProgress;
+    varying float vDistance;
+    
+    void main() {
+    
+      vColor = color;
+      vec3 pos = mix(position,position2,uProgress);
+      pos *= 1. + sin(3.14 * uProgress) * 3.;
+      pos.y += sin(uTime * 0.5 * (offset - 0.5) + offset * 10.) * 0.15;
+      pos.x += cos(uTime * 0.5 * (offset - 0.5) + offset * 10.) * 0.15;
+    
+      vec3 wPos = vec4( modelMatrix * vec4(pos, 1.0) ).xyz;
+      float dist = distance(cameraPosition, wPos);
+    
+      vDistance = smoothstep(15.,0., dist);
+    
+      gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
+      gl_PointSize = 40. * vDistance * (sin(uTime * 3. + offset * 10.) * 0.4 + 0.6 );
+    }
+  </div>
+  <script src="/surfacemesh.js"></script>
+  <script src="script.js"></script>
+</body>
+
+</html>
